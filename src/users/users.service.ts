@@ -9,6 +9,7 @@ export class UsersService {
             id: 1,
             username: 'test',
             password: 'test123',
+            roles: ['ADMIN']
         },
     ];
     private readonly logger = new Logger(UsersService.name);

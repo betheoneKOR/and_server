@@ -23,6 +23,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
      * login시 발급받은 jwt토큰의 값을 return
      */
     async validate(payload: any) {
-        return { id: payload.sub, username: payload.username };
+        return { id: payload.sub, username: payload.username, roles: payload.roles || [] };
       }
 }
