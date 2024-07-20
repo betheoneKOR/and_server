@@ -5,5 +5,5 @@ export class AuthDto {
     username: string;
 
     @IsString()
-    skey: string;
+    password: string;
 }

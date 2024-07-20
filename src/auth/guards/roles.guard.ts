@@ -25,11 +25,9 @@ export class RolesGuard implements CanActivate {
     }
 
     const { user } = context.switchToHttp().getRequest();
-    this.logger.debug(`User: ${JSON.stringify(user)}`);
-    this.logger.debug(`User: ${JSON.stringify(user?.roles)}`);
 
     if (!user || !user.roles) {
-        return false; // user 객체가 없거나 roles 속성이 없으면 접근 거부
+        return false;
       }
       
     return requiredRoles.some((role) => user.roles?.includes(role));

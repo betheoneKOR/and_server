@@ -1,14 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserDto } from 'src/users/dto/users.dto';
 import { UsersService } from 'src/users/users.service';
+import { AuthDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-  ) { }
+  ) {}
   private readonly logger = new Logger(AuthService.name);
 
   /**
@@ -33,11 +34,15 @@ export class AuthService {
    * @param user : any
    * @returns access_token
    */
-  async login(user: UserDto) {
-    const payload = { username: user.username, sub: user.id, roles: user.roles || [] };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+  async login(user: AuthDto) {
+    const userData = await this.usersService.findOne(user.username);
+    if (userData && userData.password === user.password) {
+      const payload = { username: userData.username, roles: userData.roles };
+      return {
+        access_token: this.jwtService.sign(payload)
+      }
+    }else{
+      throw new UnauthorizedException('Unauthorized');
+    }
   }
-
 }
