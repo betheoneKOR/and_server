@@ -7,11 +7,14 @@ import { UsersModule } from './users/users.module';
 import { RedisModule } from './redis/redis.module';
 import { RedisService } from './redis/redis.service';
 import { UsersService } from './users/users.service';
+import { MqttModule } from './mqtt/mqtt.module';
+import { MqttService } from './mqtt/mqtt.service';
+
 
 @Module({
-  imports: [AuthModule, UsersModule, RedisModule],
+  imports: [AuthModule, UsersModule, RedisModule, MqttModule],
   controllers: [AppController],
-  providers: [AppService, RedisService, UsersService],
+  providers: [AppService, RedisService, UsersService, MqttService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
