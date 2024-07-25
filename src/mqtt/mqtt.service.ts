@@ -9,7 +9,7 @@ export class MqttService implements OnModuleInit {
   constructor(@Inject('MQTT_CLIENT') private readonly mqttClient: MqttClient) {}
 
   async onModuleInit() {
-    await this.subscribeToTopic(['Event', 'Error']);
+    await this.subscribeToTopic(['Event', 'Error', 'Return']);
 
     // setTimeout(() => {
     //   this.publish('Event', 'test');

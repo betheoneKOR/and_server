@@ -14,7 +14,7 @@ import { mqttOptions } from './mqtt-config';
     {
       provide: 'MQTT_CLIENT',
       useFactory: (): MqttClient => {
-        const client = connect('mqtt://172.30.1.5:1883', mqttOptions);
+        const client = connect('mqtt://192.168.0.104:1883', mqttOptions);
 
         client.on('connect', () => {
           console.log('Connected to MQTT broker');
