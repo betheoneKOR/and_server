@@ -1,11 +1,13 @@
 import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
 import { MqttClient } from 'mqtt';
+import { Subject } from 'rxjs';
 
 @Injectable()
 export class MqttService implements OnModuleInit {
   private readonly logger = new Logger(MqttService.name);
   private readonly qosLevel = 2;
-
+  private returnMessage$ = new Subject<any>();
+  
   constructor(@Inject('MQTT_CLIENT') private readonly mqttClient: MqttClient) {}
 
   async onModuleInit() {
@@ -32,11 +34,36 @@ export class MqttService implements OnModuleInit {
     });
 
     this.mqttClient.on('message', (receivedTopic, message) => {
-      if (topics.includes(receivedTopic)) {
-        this.logger.log(
-          `Received message on ${receivedTopic}: ${message.toString()}`,
-        );
+      if (receivedTopic === 'Return') {
+        this.handleReturnMessage(message.toString());
       }
+      
+      // if (topics.includes(receivedTopic)) {
+      //   this.logger.log(
+      //     `Received message on ${receivedTopic}: ${message.toString()}`,
+      //   );
+      // }
+    });
+  }
+
+  async publishAndReceive(topic: string, message: any): Promise<any> {
+    this.mqttClient.publish(topic, message);
+
+    // const response = await this.waitForReturnMessage();
+    // return response;
+  }
+
+  // "Return" 토픽에서 들어온 메시지 처리
+  private handleReturnMessage(message: any) {
+    this.returnMessage$.next(message);
+  }
+
+  // "Return" 토픽에서 들어오는 첫 번째 메시지를 반환
+  public getReturnMessage(): Promise<any> {
+    return new Promise((resolve) => {
+      this.returnMessage$.subscribe((message) => {
+        resolve(message);
+      });
     });
   }
 

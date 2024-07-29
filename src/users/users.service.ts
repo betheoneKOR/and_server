@@ -19,7 +19,7 @@ export class UsersService {
 
   /**
    * user가 DB에 저장되어 있는지 확인
-   * @param username : stringg
+   * @param username : string
    * @returns boolean
    */
   async userExists(username: string): Promise<boolean> {
