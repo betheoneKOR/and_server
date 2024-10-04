@@ -1,119 +1,57 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { UpdateUserDto, UserDto } from './dto/users.dto';
-import { Redis } from 'ioredis';
+import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from 'src/postgresql/entities/user.entity';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Redis) {}
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
 
-  /**
-   * Redis Hash의 key값을 user:${username}으로 설정
-   * @param username: string
-   * @returns Redis key user:${username}
-   */
-  private getKey(username: string): string {
-    return `user:${username}`;
-  }
-
-  /**
-   * user가 DB에 저장되어 있는지 확인
-   * @param username : string
-   * @returns boolean
-   */
-  async userExists(username: string): Promise<boolean> {
-    const key = this.getKey(username);
-    return (await this.redisClient.exists(key)) === 1;
-  }
-
-  /**
-   * CREATE
-   * @param user : UserDto
-   */
-  async createUser(user: UserDto): Promise<void> {
-    const key = this.getKey(user.username);
-    const existingUser = await this.redisClient.exists(key);
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const existingUser = await this.userRepository.findOneBy({ username: createUserDto.username });
     if (existingUser) {
-      throw new Error('User already exists');
+      throw new BadRequestException(`User with username ${createUserDto.username} already exists.`);
     }
 
-    try {
-      await this.redisClient.hmset(
-        key,
-        'username',
-        user.username,
-        'password',
-        user.password,
-        'roles',
-        user.roles,
-      );
-    } catch (error) {
-      throw new Error('Failed to create user');
-    }
+    const user = this.userRepository.create(createUserDto);
+    return await this.userRepository.save(user);
   }
 
-  /**
-   * READ
-   * @param username : string
-   * @returns 
-   */
-  async getUser(username: string): Promise<UserDto> {
-    const key = this.getKey(username);
-    const user = await this.redisClient.hgetall(key);
-    if (!user || Object.keys(user).length === 0) {
-      throw new NotFoundException('User not found');
-    }
-    return {
-      username: user.username,
-      password: user.password,
-      roles: user.roles,
-    };
+  async findAll(): Promise<User[]> {
+    return await this.userRepository.find();
   }
 
-  /**
-   * UPDATE
-   * @param username : string
-   * @param updates : userDto
-   */
-  async updateUser(username: string, updates: UpdateUserDto): Promise<void> {
-    const key = this.getKey(username);
-    const userExists = await this.redisClient.exists(key);
-    if (!userExists) {
-      throw new NotFoundException('User not found');
+  async findOneById(id: number): Promise<User> {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
     }
-
-    // Merge updates with existing user data
-    const user = await this.redisClient.hgetall(key);
-    const updatedUser = {
-      ...user,
-      ...updates,
-      roles: updates.roles ? updates.roles : user.roles,
-    };
-
-    await this.redisClient.hmset(key, updatedUser);
-  }
-
-  /**
-   * DELETE
-   * @param username : string
-   */
-  async deleteUser(username: string): Promise<void> {
-    const key = this.getKey(username);
-    const userExists = await this.redisClient.exists(key);
-    if (!userExists) {
-      throw new NotFoundException('User not found');
-    }
-    await this.redisClient.del(key);
-  }
-
-  /**
-   * Redis DB에서 일치하는 username의 데이터를 리턴함
-   * @param username : string
-   * @returns user
-   */
-  async findOne(username: string): Promise<UserDto | undefined> {
-    const user = this.getUser(username);
     return user;
+  }
+
+  async findOneByUsername(username: string): Promise<User> {
+    const user = await this.userRepository.findOneBy({ username });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${username} not found`);
+    }
+    return user;
+  }
+
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findOneById(id);
+    await this.userRepository.update(user.id, updateUserDto);
+    return { ...user, ...updateUserDto };
+  }
+
+  async remove(id: number): Promise<void> {
+    const user = await this.findOneById(id);
+    await this.userRepository.delete(user.id);
   }
 }

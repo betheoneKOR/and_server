@@ -1,17 +1,29 @@
 import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
 import { MqttClient } from 'mqtt';
 import { Subject } from 'rxjs';
+import { MachinesService } from 'src/machines/machines.service';
 
 @Injectable()
 export class MqttService implements OnModuleInit {
   private readonly logger = new Logger(MqttService.name);
   private readonly qosLevel = 2;
   private returnMessage$ = new Subject<any>();
-  
-  constructor(@Inject('MQTT_CLIENT') private readonly mqttClient: MqttClient) {}
 
+  constructor(
+    @Inject('MQTT_CLIENT') private readonly mqttClient: MqttClient,
+    private readonly machinesService: MachinesService,
+  ) {}
+
+  /**
+   * 모듈 초기 구성 시 동적 값에 따른 함수 구현
+   */
   async onModuleInit() {
-    await this.subscribeToTopic(['Event', 'Error', 'Return']);
+    const userNumber = await this.machinesService.getCount();
+    let i=1;
+    while(i<userNumber+1) {
+      await this.subscribeToTopic([`${i}/Event`, `${i}/Error`, `${i}/Return`]);
+      i++;
+    }
 
     // setTimeout(() => {
     //   this.publish('Event', 'test');
@@ -37,7 +49,7 @@ export class MqttService implements OnModuleInit {
       if (receivedTopic === 'Return') {
         this.handleReturnMessage(message.toString());
       }
-      
+
       // if (topics.includes(receivedTopic)) {
       //   this.logger.log(
       //     `Received message on ${receivedTopic}: ${message.toString()}`,

@@ -1,6 +1,6 @@
 import { IsString } from "class-validator";
 
-export class UserDto {
+export class CreateUserDto {
     @IsString()
     username: string;
 
@@ -11,10 +11,3 @@ export class UserDto {
     roles: string;
 }
 
-export class UpdateUserDto {
-    @IsString()
-    password: string;
-
-    @IsString()
-    roles?: string;
-}

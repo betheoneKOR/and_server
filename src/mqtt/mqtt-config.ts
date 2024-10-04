@@ -13,8 +13,8 @@ export const mqttOptions: IClientOptions = {
   clientId: 'betheone',
   clean: true,
   connectTimeout: 5000,
-  username: 'betheone',
-  password: '1234',
+  // username: 'betheone',
+  // password: '1234',
   reconnectPeriod: 3000,
   keepalive: 60,
   will: {
