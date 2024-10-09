@@ -1,4 +1,11 @@
-import { Controller, Get, Logger, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Logger,
+  OnModuleInit,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { Roles } from './auth/decorator/role.decorator';
@@ -6,6 +13,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RateLimitingGuard } from './auth/guards/rate-limiting.guard';
 import { MqttService } from './mqtt/mqtt.service';
 import { Response } from 'express';
+import { MachinesService } from './machines/machines.service';
 
 /**
  * JwtAuthGuard를 통해 JWT데이터를 받음
@@ -14,13 +22,15 @@ import { Response } from 'express';
  */
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard, RateLimitingGuard)
-export class AppController {
+export class AppController implements OnModuleInit {
   private readonly logger = new Logger(AppController.name);
+  private machineCount = 0;
   constructor(
     private readonly appService: AppService,
-    private readonly mqttService: MqttService
+    private readonly mqttService: MqttService,
+    private readonly machinesService: MachinesService,
   ) {}
-  
+
   @Get()
   // @Roles('ADMIN', 'MASTER')
   getHello(): string {
@@ -28,15 +38,28 @@ export class AppController {
   }
 
   /**
+   * Postgresql에서 동적 Machine 수에 따른 함수 사용
+   */
+  async getMachineCount(): Promise<void> {
+    this.machineCount = await this.machinesService.getCount();
+  }
+
+  async onModuleInit() {
+    await this.getMachineCount();
+    this.logger.log(this.machineCount);
+  }
+
+  /**
    * Routing path에 따른 컨트롤러 구현
    */
-
   // #region System
   @Get('getMachineName')
   @Roles('MASTER', 'ADMIN', 'USER', 'CLIENT')
   async getMachineName(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('System/MachineName', '2');
-    const response = await this.mqttService.getReturnMessage();
+    this.mqttService.publish('2/System/MachineName', '2');
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('System/MachineName', '2');
   }
@@ -44,8 +67,10 @@ export class AppController {
   @Get('getMachineModel')
   @Roles('MASTER', 'ADMIN', 'USER', 'CLIENT')
   async getMachineModel(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('System/MachineModel', '2');
-    const response = await this.mqttService.getReturnMessage();
+    this.mqttService.publish('2/System/MachineModel', '2');
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('System/MachineModel', '2');
   }
@@ -56,7 +81,9 @@ export class AppController {
   @Roles('MASTER', 'ADMIN', 'USER')
   async getHealthCheck(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Status/HealthCheck', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Status/HealthCheck', '2');
   }
@@ -65,7 +92,9 @@ export class AppController {
   @Roles('MASTER', 'ADMIN', 'USER', 'CLIENT')
   async getIsRun(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Status/IsRun', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Status/IsRun', '2');
   }
@@ -76,7 +105,9 @@ export class AppController {
   @Roles('MASTER', 'ADMIN')
   async getFeedrate(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Actual/Feedrate', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Actual/Feedrate', '2');
   }
@@ -85,7 +116,9 @@ export class AppController {
   @Roles('MASTER', 'ADMIN')
   async getSpindleSpeed(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Actual/SpindleSpeed', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Actual/SpindleSpeed', '2');
   }
@@ -94,34 +127,42 @@ export class AppController {
   @Roles('MASTER', 'ADMIN')
   async getLoadmeterSvPer(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Actual/LoadmeterSvPer', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Actual/LoadmeterSvPer', '2');
   }
-  
+
   @Get('getLoadmeterSvAm')
   @Roles('MASTER', 'ADMIN')
   async getLoadmeterSvAm(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Actual/LoadmeterSvAm', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Actual/LoadmeterSvAm', '2');
   }
-  
+
   @Get('getLoadmeterSpPer')
   @Roles('MASTER', 'ADMIN')
   async getLoadmeterSpPer(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Actual/getLoadmeterSpPer', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Actual/getLoadmeterSpPer', '2');
   }
-  
+
   @Get('getLoadmeterSvAv')
   @Roles('MASTER', 'ADMIN')
   async getLoadmeterSvAv(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Actual/LoadmeterSvAv', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Actual/LoadmeterSvAv', '2');
   }
@@ -130,7 +171,9 @@ export class AppController {
   @Roles('MASTER', 'ADMIN')
   async getPos(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Actual/Pos', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Actual/Pos', '2');
   }
@@ -141,16 +184,20 @@ export class AppController {
   @Roles('MASTER', 'ADMIN', 'USER')
   async getSequenceNumber(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Modal/SequenceNumber', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Modal/SequenceNumber', '2');
   }
-  
+
   @Get('getM_Feedrate')
   @Roles('MASTER', 'ADMIN', 'USER')
   async getM_Feedrate(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Modal/M_Feedrate', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Modal/M_Feedrate', '2');
   }
@@ -159,7 +206,9 @@ export class AppController {
   @Roles('MASTER', 'ADMIN', 'USER')
   async getM_Spindle(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Modal/M_Spindle', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Modal/M_Spindle', '2');
   }
@@ -168,7 +217,9 @@ export class AppController {
   @Roles('MASTER', 'ADMIN', 'USER')
   async getM_Tool(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Modal/M_Tool', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Modal/M_Tool', '2');
   }
@@ -177,16 +228,20 @@ export class AppController {
   @Roles('MASTER', 'ADMIN', 'USER')
   async getM_Gcode(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Modal/M_Gcode', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Modal/M_Gcode', '2');
   }
-  
+
   @Get('getProgramNumber')
   @Roles('MASTER', 'ADMIN', 'USER')
   async getProgramNumber(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Modal/ProgramNumber', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Modal/ProgramNumber', '2');
   }
@@ -195,7 +250,9 @@ export class AppController {
   @Roles('MASTER', 'ADMIN', 'USER')
   async getCycleTime(@Res() res: Response): Promise<Response> {
     this.mqttService.publish('Modal/CycleTime', '2');
-    const response = await this.mqttService.getReturnMessage();
+    const response = await this.mqttService.getReturnMessage(
+      '2/Return/MachineName',
+    );
     return res.send(response);
     // return this.mqttService.publish('Modal/CycleTime', '2');
   }

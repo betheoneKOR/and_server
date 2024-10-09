@@ -2,12 +2,13 @@ import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
 import { MqttClient } from 'mqtt';
 import { Subject } from 'rxjs';
 import { MachinesService } from 'src/machines/machines.service';
+import { errorTopic, eventTopic, returnTopic } from './topicList';
 
 @Injectable()
 export class MqttService implements OnModuleInit {
   private readonly logger = new Logger(MqttService.name);
   private readonly qosLevel = 2;
-  private returnMessage$ = new Subject<any>();
+  private returnMessages: { [key: string]: Subject<any> } = {};
 
   constructor(
     @Inject('MQTT_CLIENT') private readonly mqttClient: MqttClient,
@@ -15,16 +16,45 @@ export class MqttService implements OnModuleInit {
   ) {}
 
   /**
+   * Postgresql에서 동적 Machine 수에 따른 함수 사용
+   */
+  async getMachineCount(): Promise<number> {
+    const count:number = await this.machinesService.getCount();
+    return count;
+  }
+
+  /**
    * 모듈 초기 구성 시 동적 값에 따른 함수 구현
    */
   async onModuleInit() {
-    const userNumber = await this.machinesService.getCount();
-    let i=1;
-    while(i<userNumber+1) {
-      await this.subscribeToTopic([`${i}/Event`, `${i}/Error`, `${i}/Return`]);
+    const count = await this.getMachineCount()
+    let i = 1;
+    while (i < count + 1) {
+      await Promise.all(
+        returnTopic.map(async (topic) => {
+          await this.subscribeToTopic(`${i}${topic}`);
+        }),
+      );
+
+      await Promise.all(
+        errorTopic.map(async (topic) => {
+          await this.subscribeToTopic(`${i}${topic}`);
+        }),
+      );
+
+      await Promise.all(
+        eventTopic.map(async (topic) => {
+          await this.subscribeToTopic(`${i}${topic}`);
+        }),
+      );
       i++;
     }
 
+    this.mqttClient.on('message', (topic, message) => {
+      if (this.returnMessages[topic]) {
+        this.returnMessages[topic].next(message.toString());
+      }
+    });
     // setTimeout(() => {
     //   this.publish('Event', 'test');
     // }, 3000)
@@ -34,27 +64,18 @@ export class MqttService implements OnModuleInit {
    * Mqtt Subscribe
    * @param topics : string[]
    */
-  async subscribeToTopic(topics: string[]): Promise<void> {
-    topics.forEach((topic) => {
-      this.mqttClient.subscribe(topic, { qos: this.qosLevel }, (err) => {
-        if (err) {
-          this.logger.error(`Failed to subscribe to topic ${topic}`, err);
-        } else {
-          this.logger.log(`Subscribed to topic ${topic}`);
-        }
-      });
-    });
-
-    this.mqttClient.on('message', (receivedTopic, message) => {
-      if (receivedTopic === 'Return') {
-        this.handleReturnMessage(message.toString());
+  async subscribeToTopic(topic: string): Promise<void> {
+    this.mqttClient.subscribe(topic, { qos: this.qosLevel }, (err) => {
+      if (err) {
+        this.logger.error(`Failed to subscribe to topic ${topic}`, err);
+      } else {
+        this.logger.log(`Subscribed to topic ${topic}`);
       }
 
-      // if (topics.includes(receivedTopic)) {
-      //   this.logger.log(
-      //     `Received message on ${receivedTopic}: ${message.toString()}`,
-      //   );
-      // }
+      // 각 토픽에 대해 Subject를 초기화
+      if (!this.returnMessages[topic]) {
+        this.returnMessages[topic] = new Subject<any>();
+      }
     });
   }
 
@@ -65,17 +86,19 @@ export class MqttService implements OnModuleInit {
     // return response;
   }
 
-  // "Return" 토픽에서 들어온 메시지 처리
-  private handleReturnMessage(message: any) {
-    this.returnMessage$.next(message);
-  }
+  // // "Return" 토픽에서 들어온 메시지 처리
+  // private handleReturnMessage(message: any) {
+  //   this.returnMessages.next(message);
+  // }
 
-  // "Return" 토픽에서 들어오는 첫 번째 메시지를 반환
-  public getReturnMessage(): Promise<any> {
+  // 개별 토픽의 응답을 반환
+  public getReturnMessage(topic: string): Promise<any> {
     return new Promise((resolve) => {
-      this.returnMessage$.subscribe((message) => {
-        resolve(message);
-      });
+      if (this.returnMessages[topic]) {
+        this.returnMessages[topic].subscribe((message) => {
+          resolve(message);
+        });
+      }
     });
   }
 
