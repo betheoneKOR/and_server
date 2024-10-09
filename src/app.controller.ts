@@ -61,7 +61,6 @@ export class AppController implements OnModuleInit {
       '2/Return/MachineName',
     );
     return res.send(response);
-    // return this.mqttService.publish('System/MachineName', '2');
   }
 
   @Get('getMachineModel')
@@ -72,7 +71,6 @@ export class AppController implements OnModuleInit {
       '2/Return/MachineName',
     );
     return res.send(response);
-    // return this.mqttService.publish('System/MachineModel', '2');
   }
   // #endregion System
 
