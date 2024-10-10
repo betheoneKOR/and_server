@@ -3,6 +3,7 @@ import {
   Get,
   Logger,
   OnModuleInit,
+  Param,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { RateLimitingGuard } from './auth/guards/rate-limiting.guard';
 import { MqttService } from './mqtt/mqtt.service';
 import { Response } from 'express';
 import { MachinesService } from './machines/machines.service';
+import { topicMaps } from './mqtt/topicMap';
 
 /**
  * JwtAuthGuard를 통해 JWT데이터를 받음
@@ -25,6 +27,7 @@ import { MachinesService } from './machines/machines.service';
 export class AppController implements OnModuleInit {
   private readonly logger = new Logger(AppController.name);
   private machineCount = 0;
+  private readonly topicMaps = topicMaps;
   constructor(
     private readonly appService: AppService,
     private readonly mqttService: MqttService,
@@ -46,213 +49,251 @@ export class AppController implements OnModuleInit {
 
   async onModuleInit() {
     await this.getMachineCount();
-    this.logger.log(this.machineCount);
   }
 
   /**
    * Routing path에 따른 컨트롤러 구현
+   * Routing path, Mqtt pub, sub routing은 topicMaps.ts 참조
    */
   // #region System
-  @Get('getMachineName')
+  @Get(`${topicMaps.MachineName.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER', 'CLIENT')
-  async getMachineName(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('2/System/MachineName', '2');
+  async getMachineName(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response,
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.MachineName.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.MachineName.return}`,
     );
     return res.send(response);
   }
 
-  @Get('getMachineModel')
+  @Get(`${topicMaps.MachineModel.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER', 'CLIENT')
-  async getMachineModel(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('2/System/MachineModel', '2');
+  async getMachineModel(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.MachineModel.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.MachineModel.return}`,
     );
     return res.send(response);
   }
   // #endregion System
 
   // #region Status
-  @Get('getHealthCheck')
+  @Get(`${topicMaps.HealthCheck.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER')
-  async getHealthCheck(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Status/HealthCheck', '2');
+  async getHealthCheck(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.HealthCheck.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.HealthCheck.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Status/HealthCheck', '2');
   }
 
-  @Get('getIsRun')
+  @Get(`${topicMaps.GetIsRun.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER', 'CLIENT')
-  async getIsRun(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Status/IsRun', '2');
+  async getIsRun(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetIsRun.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetIsRun.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Status/IsRun', '2');
   }
   // #endregion
 
   // #region Actual
-  @Get('getFeedrate')
+  @Get(`${topicMaps.GetFeedrate.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN')
-  async getFeedrate(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Actual/Feedrate', '2');
+  async getFeedrate(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetFeedrate.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetFeedrate.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Actual/Feedrate', '2');
   }
 
-  @Get('getSpindleSpeed')
+  @Get(`${topicMaps.GetSpindleSpeed.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN')
-  async getSpindleSpeed(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Actual/SpindleSpeed', '2');
+  async getSpindleSpeed(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetSpindleSpeed.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetSpindleSpeed.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Actual/SpindleSpeed', '2');
   }
 
-  @Get('getLoadmeterSvPer')
+  @Get(`${topicMaps.GetLoadmeterSvPer.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN')
-  async getLoadmeterSvPer(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Actual/LoadmeterSvPer', '2');
+  async getLoadmeterSvPer(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetLoadmeterSvPer.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetLoadmeterSvPer.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Actual/LoadmeterSvPer', '2');
   }
 
-  @Get('getLoadmeterSvAm')
+  @Get(`${topicMaps.GetLoadmeterSvAm.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN')
-  async getLoadmeterSvAm(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Actual/LoadmeterSvAm', '2');
+  async getLoadmeterSvAm(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetLoadmeterSvAm.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetLoadmeterSvAm.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Actual/LoadmeterSvAm', '2');
   }
 
-  @Get('getLoadmeterSpPer')
+  @Get(`${topicMaps.GetLoadmeterSpPer.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN')
-  async getLoadmeterSpPer(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Actual/getLoadmeterSpPer', '2');
+  async getLoadmeterSpPer(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetLoadmeterSpPer.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetLoadmeterSpPer.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Actual/getLoadmeterSpPer', '2');
   }
 
-  @Get('getLoadmeterSvAv')
+  @Get(`${topicMaps.GetLoadmeterSvAv.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN')
-  async getLoadmeterSvAv(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Actual/LoadmeterSvAv', '2');
+  async getLoadmeterSvAv(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetLoadmeterSvAv.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetLoadmeterSvAv.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Actual/LoadmeterSvAv', '2');
   }
 
-  @Get('getPos')
+  @Get(`${topicMaps.GetPos.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN')
-  async getPos(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Actual/Pos', '2');
+  async getPos(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetPos.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetPos.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Actual/Pos', '2');
   }
   // #endregion
 
   // #region Modal
-  @Get('getSequenceNumber')
+  @Get(`${topicMaps.GetSequenceNumber.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER')
-  async getSequenceNumber(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Modal/SequenceNumber', '2');
+  async getSequenceNumber(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetSequenceNumber.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetSequenceNumber.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Modal/SequenceNumber', '2');
   }
 
-  @Get('getM_Feedrate')
+  @Get(`${topicMaps.GetM_Feedrate.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER')
-  async getM_Feedrate(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Modal/M_Feedrate', '2');
+  async getM_Feedrate(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetM_Feedrate.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetM_Feedrate.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Modal/M_Feedrate', '2');
   }
 
-  @Get('getM_Spindle')
+  @Get(`${topicMaps.GetM_Spindle.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER')
-  async getM_Spindle(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Modal/M_Spindle', '2');
+  async getM_Spindle(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetM_Spindle.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetM_Spindle.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Modal/M_Spindle', '2');
   }
 
-  @Get('getM_Tool')
+  @Get(`${topicMaps.GetM_Tool.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER')
-  async getM_Tool(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Modal/M_Tool', '2');
+  async getM_Tool(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetM_Tool.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetM_Tool.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Modal/M_Tool', '2');
   }
 
-  @Get('getM_Gcode')
+  @Get(`${topicMaps.GetM_Gcode.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER')
-  async getM_Gcode(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Modal/M_Gcode', '2');
+  async getM_Gcode(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetM_Gcode.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetM_Gcode.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Modal/M_Gcode', '2');
   }
 
-  @Get('getProgramNumber')
+  @Get(`${topicMaps.GetProgramNumber.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER')
-  async getProgramNumber(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Modal/ProgramNumber', '2');
+  async getProgramNumber(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetProgramNumber.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetProgramNumber.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Modal/ProgramNumber', '2');
   }
 
-  @Get('getCycleTime')
+  @Get(`${topicMaps.GetCycleTime.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN', 'USER')
-  async getCycleTime(@Res() res: Response): Promise<Response> {
-    this.mqttService.publish('Modal/CycleTime', '2');
+  async getCycleTime(
+    @Param('machineNumber') machineNumber: string,
+    @Res() res: Response
+  ): Promise<Response> {
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetCycleTime.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      '2/Return/MachineName',
+      `${machineNumber}${this.topicMaps.GetCycleTime.return}`,
     );
     return res.send(response);
-    // return this.mqttService.publish('Modal/CycleTime', '2');
   }
   // #endregion
 }
