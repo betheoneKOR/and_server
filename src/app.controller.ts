@@ -23,7 +23,7 @@ import { topicMaps } from './mqtt/topicMap';
  * RateLimitingGuard를 통해 요청 제한을 실행함
  */
 @Controller()
-@UseGuards(JwtAuthGuard, RolesGuard, RateLimitingGuard)
+// @UseGuards(JwtAuthGuard, RolesGuard, RateLimitingGuard)
 export class AppController implements OnModuleInit {
   private readonly logger = new Logger(AppController.name);
   private machineCount = 0;
@@ -57,7 +57,7 @@ export class AppController implements OnModuleInit {
    */
   // #region System
   @Get(`${topicMaps.MachineName.path}/:machineNumber`)
-  @Roles('MASTER', 'ADMIN', 'USER', 'CLIENT')
+  // @Roles('MASTER', 'ADMIN', 'USER', 'CLIENT')
   async getMachineName(
     @Param('machineNumber') machineNumber: string,
     @Res() res: Response,
@@ -70,7 +70,7 @@ export class AppController implements OnModuleInit {
   }
 
   @Get(`${topicMaps.MachineModel.path}/:machineNumber`)
-  @Roles('MASTER', 'ADMIN', 'USER', 'CLIENT')
+  // @Roles('MASTER', 'ADMIN', 'USER', 'CLIENT')
   async getMachineModel(
     @Param('machineNumber') machineNumber: string,
     @Res() res: Response
@@ -177,15 +177,15 @@ export class AppController implements OnModuleInit {
     return res.send(response);
   }
 
-  @Get(`${topicMaps.GetLoadmeterSvAv.path}/:machineNumber`)
+  @Get(`${topicMaps.GetLoadmeterSpAv.path}/:machineNumber`)
   @Roles('MASTER', 'ADMIN')
-  async getLoadmeterSvAv(
+  async getLoadmeterSpAv(
     @Param('machineNumber') machineNumber: string,
     @Res() res: Response
   ): Promise<Response> {
-    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetLoadmeterSvAv.system}`, '2');
+    this.mqttService.publish(`${machineNumber}${this.topicMaps.GetLoadmeterSpAv.system}`, '2');
     const response = await this.mqttService.getReturnMessage(
-      `${machineNumber}${this.topicMaps.GetLoadmeterSvAv.return}`,
+      `${machineNumber}${this.topicMaps.GetLoadmeterSpAv.return}`,
     );
     return res.send(response);
   }

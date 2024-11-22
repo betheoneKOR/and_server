@@ -33,12 +33,12 @@ export const topicMaps: { [key: string]: ITopicMap } = {
   GetSpindleSpeed: {
     path: 'getSpindleSpeed',
     system: '/Actual/SpindleSpeed',
-    return: '/Return/HealthCheck',
+    return: '/Return/SpindleSpeed',
   },
   GetLoadmeterSvPer: {
     path: 'getLoadmeterSvPer',
     system: '/Actual/LoadmeterSvPer',
-    return: '/Return/HealthCheck',
+    return: '/Return/LoadmeterSvPer',
   },
   GetLoadmeterSvAm: {
     path: 'getLoadmeterSvAm',
@@ -47,13 +47,13 @@ export const topicMaps: { [key: string]: ITopicMap } = {
   },
   GetLoadmeterSpPer: {
     path: 'getLoadmeterSpPer',
-    system: '/Actual/getLoadmeterSpPer',
-    return: '/Return/getLoadmeterSpPer',
+    system: '/Actual/LoadmeterSpPer',
+    return: '/Return/LoadmeterSpPer',
   },
-  GetLoadmeterSvAv: {
-    path: 'getLoadmeterSvAv',
-    system: '/Actual/LoadmeterSvAv',
-    return: '/Return/LoadmeterSvAv',
+  GetLoadmeterSpAv: {
+    path: 'getLoadmeterSpAv',
+    system: '/Actual/LoadmeterSpAv',
+    return: '/Return/LoadmeterSpAv',
   },
   GetPos: {
     path: 'getPos',
