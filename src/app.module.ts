@@ -9,10 +9,11 @@ import { MqttModule } from './mqtt/mqtt.module';
 import { MqttService } from './mqtt/mqtt.service';
 import { PostgresqlModule } from './postgresql/postgresql.module';
 import { MachinesModule } from './machines/machines.module';
+import { ApiModule } from './api/api.module';
 
 
 @Module({
-  imports: [AuthModule, RedisModule, MqttModule, MachinesModule, PostgresqlModule, UsersModule],
+  imports: [AuthModule, RedisModule, MqttModule, MachinesModule, PostgresqlModule, UsersModule, ApiModule],
   controllers: [AppController],
   providers: [AppService, MqttService],
 })
