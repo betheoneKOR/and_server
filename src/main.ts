@@ -10,7 +10,7 @@ async function bootstrap() {
   });
 
   // IP 주소와 포트 설정
-  const host = 'localhost'; // 모든 IP에서 접근 가능
+  const host = '0.0.0.0'; // 모든 IP에서 접근 가능
   const port = 3000; // NestJS 서버가 사용할 포트
 
   await app.listen(port, host); // IP 주소와 포트를 함께 설정

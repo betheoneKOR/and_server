@@ -13,7 +13,7 @@ import { MachinesModule } from 'src/machines/machines.module';
     {
       provide: 'MQTT_CLIENT',
       useFactory: (): MqttClient => {
-        const client = connect('mqtt://172.30.1.5:1883', mqttOptions);
+        const client = connect('mqtt://127.0.0.1:1883', mqttOptions);
 
         client.on('connect', () => {
           console.log('Connected to MQTT broker');

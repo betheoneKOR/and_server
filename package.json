@@ -24,7 +24,7 @@
     "@nestjs/core": "^9.0.0",
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/mapped-types": "*",
-    "@nestjs/microservices": "^10.3.10",
+    "@nestjs/microservices": "9",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/swagger": "6",
@@ -68,7 +68,8 @@
     "ts-loader": "^9.2.3",
     "ts-node": "^10.0.0",
     "tsconfig-paths": "4.1.1",
-    "typescript": "^4.7.4"
+    "typescript": "^4.7.4",
+    "webpack": "^5.99.8"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -86,5 +87,6 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  }
+  },
+  "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538"
 }
